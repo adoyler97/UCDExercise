@@ -96,6 +96,7 @@ print(type(np_baseball))
 # Print out the shape of np_baseball
 print(np_baseball.shape)
 
+
 # baseball is available as a regular list of lists
 
 # Import numpy package
