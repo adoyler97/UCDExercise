@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 # Create the stripplot
 sns.stripplot(data=df,
          x='Award_Amount',

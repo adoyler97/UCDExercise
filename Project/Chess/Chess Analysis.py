@@ -13,7 +13,7 @@ api = KaggleApi()
 api.authenticate()
 
 # downloading datasets for Chess games
-# api.dataset_download_files('arevel/chess-games')
+api.dataset_download_files('arevel/chess-games')
 
 # Read data in chunks of 100000 rows and concatenate into one dataframe at a time to speed up read time
 zf = zipfile.ZipFile('chess-games.zip')
@@ -30,6 +30,9 @@ chess_df = chess_df.drop_duplicates(subset=['White', 'Black'])
 print(chess_df.shape)
 chess_df = chess_df.reset_index()
 
+# Define average ELO rank per game
+chess_df['AverageElo'] = (chess_df['WhiteElo'] + chess_df['BlackElo']) / 2
+
 # Define chess rankings in ranges
 # Super Grand Master = ELO 2700+
 # Grand Master = 2500 - 2700
@@ -43,40 +46,50 @@ chess_df = chess_df.reset_index()
 # Class_D = 1200 - 1400
 # Novices = 0 - 1200
 
-# create a list of conditions
-
+# create lists of conditions
 White_conditions = [(chess_df['WhiteElo'] >= 2700) &
-              (chess_df['WhiteElo'] <= 2700), (chess_df['WhiteElo'] >= 2500) &
-              (chess_df['WhiteElo'] <= 2500), (chess_df['WhiteElo'] >= 2400) &
-              (chess_df['WhiteElo'] <= 2400), (chess_df['WhiteElo'] >= 2300) &
-              (chess_df['WhiteElo'] <= 2300), (chess_df['WhiteElo'] >= 2200) &
-              (chess_df['WhiteElo'] <= 2200), (chess_df['WhiteElo'] >= 2000) &
-              (chess_df['WhiteElo'] <= 2000), (chess_df['WhiteElo'] >= 1800) &
-              (chess_df['WhiteElo'] <= 1800), (chess_df['WhiteElo'] >= 1600) &
-              (chess_df['WhiteElo'] <= 1600), (chess_df['WhiteElo'] >= 1400) &
-              (chess_df['WhiteElo'] <= 1400), (chess_df['WhiteElo'] >= 1200) &
-              (chess_df['WhiteElo'] <= 1200), (chess_df['WhiteElo'] >= 0)]
+                    (chess_df['WhiteElo'] <= 2700), (chess_df['WhiteElo'] >= 2500) &
+                    (chess_df['WhiteElo'] <= 2500), (chess_df['WhiteElo'] >= 2400) &
+                    (chess_df['WhiteElo'] <= 2400), (chess_df['WhiteElo'] >= 2300) &
+                    (chess_df['WhiteElo'] <= 2300), (chess_df['WhiteElo'] >= 2200) &
+                    (chess_df['WhiteElo'] <= 2200), (chess_df['WhiteElo'] >= 2000) &
+                    (chess_df['WhiteElo'] <= 2000), (chess_df['WhiteElo'] >= 1800) &
+                    (chess_df['WhiteElo'] <= 1800), (chess_df['WhiteElo'] >= 1600) &
+                    (chess_df['WhiteElo'] <= 1600), (chess_df['WhiteElo'] >= 1400) &
+                    (chess_df['WhiteElo'] <= 1400), (chess_df['WhiteElo'] >= 1200) &
+                    (chess_df['WhiteElo'] <= 1200), (chess_df['WhiteElo'] >= 0)]
 
 Black_conditions = [(chess_df['BlackElo'] >= 2700) &
-              (chess_df['BlackElo'] <= 2700), (chess_df['BlackElo'] >= 2500) &
-              (chess_df['BlackElo'] <= 2500), (chess_df['BlackElo'] >= 2400) &
-              (chess_df['BlackElo'] <= 2400), (chess_df['BlackElo'] >= 2300) &
-              (chess_df['BlackElo'] <= 2300), (chess_df['BlackElo'] >= 2200) &
-              (chess_df['BlackElo'] <= 2200), (chess_df['BlackElo'] >= 2000) &
-              (chess_df['BlackElo'] <= 2000), (chess_df['BlackElo'] >= 1800) &
-              (chess_df['BlackElo'] <= 1800), (chess_df['BlackElo'] >= 1600) &
-              (chess_df['BlackElo'] <= 1600), (chess_df['BlackElo'] >= 1400) &
-              (chess_df['BlackElo'] <= 1400), (chess_df['BlackElo'] >= 1200) &
-              (chess_df['BlackElo'] <= 1200), (chess_df['BlackElo'] >= 0)]
+                    (chess_df['BlackElo'] <= 2700), (chess_df['BlackElo'] >= 2500) &
+                    (chess_df['BlackElo'] <= 2500), (chess_df['BlackElo'] >= 2400) &
+                    (chess_df['BlackElo'] <= 2400), (chess_df['BlackElo'] >= 2300) &
+                    (chess_df['BlackElo'] <= 2300), (chess_df['BlackElo'] >= 2200) &
+                    (chess_df['BlackElo'] <= 2200), (chess_df['BlackElo'] >= 2000) &
+                    (chess_df['BlackElo'] <= 2000), (chess_df['BlackElo'] >= 1800) &
+                    (chess_df['BlackElo'] <= 1800), (chess_df['BlackElo'] >= 1600) &
+                    (chess_df['BlackElo'] <= 1600), (chess_df['BlackElo'] >= 1400) &
+                    (chess_df['BlackElo'] <= 1400), (chess_df['BlackElo'] >= 1200) &
+                    (chess_df['BlackElo'] <= 1200), (chess_df['BlackElo'] >= 0)]
+
+Average_conditions = [(chess_df['AverageElo'] >= 2700) &
+                    (chess_df['AverageElo'] <= 2700), (chess_df['AverageElo'] >= 2500) &
+                    (chess_df['AverageElo'] <= 2500), (chess_df['AverageElo'] >= 2400) &
+                    (chess_df['AverageElo'] <= 2400), (chess_df['AverageElo'] >= 2300) &
+                    (chess_df['AverageElo'] <= 2300), (chess_df['AverageElo'] >= 2200) &
+                    (chess_df['AverageElo'] <= 2200), (chess_df['AverageElo'] >= 2000) &
+                    (chess_df['AverageElo'] <= 2000), (chess_df['AverageElo'] >= 1800) &
+                    (chess_df['AverageElo'] <= 1800), (chess_df['AverageElo'] >= 1600) &
+                    (chess_df['AverageElo'] <= 1600), (chess_df['AverageElo'] >= 1400) &
+                    (chess_df['AverageElo'] <= 1400), (chess_df['AverageElo'] >= 1200) &
+                    (chess_df['AverageElo'] <= 1200), (chess_df['AverageElo'] >= 0)]
 
 # create a list of the values to assign for each condition
-
 ELO = ['Super_GM', 'GM', 'IM_GM', 'FM_IM', 'CM_NM', 'Experts', 'Class_A', 'Class_B', 'Class_C', 'Class_D', 'Novices']
 
 # create a new column and use np.select to assign values to it using the lists as arguments
-
 chess_df['WhiteEloRank'] = np.select(White_conditions, ELO)
 chess_df['BlackEloRank'] = np.select(Black_conditions, ELO)
+chess_df['AverageEloRank'] = np.select(Average_conditions, ELO)
 
 # Defining each game type in order to split dataframe into smaller sections for manipulation
 
@@ -119,10 +132,14 @@ Correspondence_df2 = chess_df[chess_df.Event == 'Correspondence ']
 Correspondence_df = pd.merge(Correspondence_df1, Correspondence_df2, how='outer')
 
 # Plot results
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
 
-ax.bar(Correspondence_df["BlackEloRank"], Correspondence_df["Termination"])
+# ax.bar(Correspondence_df["BlackEloRank"], Correspondence_df["Termination"])
+# sns.scatterplot(x="AverageElo", y="Termination", data=Classical_df)
 
+sns.displot(Correspondence_df['AverageElo'], kde=True)
+# sns.displot(data=chess_df, x="Termination", hue="Event", kind="kde")
+sns.displot(data=chess_df, x="AverageElo", hue="Termination", kind="kde")
 plt.show()
 plt.clf()
 
