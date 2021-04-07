@@ -83,16 +83,33 @@ Average_conditions = [(chess_df['AverageElo'] >= 2700) &
                     (chess_df['AverageElo'] <= 1400), (chess_df['AverageElo'] >= 1200) &
                     (chess_df['AverageElo'] <= 1200), (chess_df['AverageElo'] >= 0)]
 
+Outcome_conditions = [(chess_df['Result'] == "1-0") & (chess_df['Result'] == "0-1") &
+                      (chess_df['Result'] == "1/2-1/2")]
+
 # create a list of the values to assign for each condition
-ELO = ['Super_GM', 'GM', 'IM_GM', 'FM_IM', 'CM_NM', 'Experts', 'Class_A', 'Class_B', 'Class_C', 'Class_D', 'Novices']
+ELO = ['Super GM', 'GM', 'GM/IM', 'FM/IM', 'CM/NM', 'Experts', 'Class A', 'Class B', 'Class C', 'Class D', 'Novices']
+Outcome = ['White Wins', 'Black Wins', 'Draw']
 
 # create a new column and use np.select to assign values to it using the lists as arguments
 chess_df['WhiteEloRank'] = np.select(White_conditions, ELO)
 chess_df['BlackEloRank'] = np.select(Black_conditions, ELO)
 chess_df['AverageEloRank'] = np.select(Average_conditions, ELO)
 
-# Defining each game type in order to split dataframe into smaller sections for manipulation
+# create dataframe for moves
+moves_df = chess_df["AN"].str.split(" ", n=30, expand=True)
+moves_df = moves_df.drop(moves_df.iloc[:, 0:31:3], axis=1)
 
+# append moves dataframe to chess dataframe
+chess_df = pd.concat([chess_df, moves_df], axis=1)
+chess_df.reset_index()
+# chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
+print(chess_df)
+
+# sort data from lowest average ELO to highest average ELO
+chess_df = chess_df.sort_values(by='AverageElo', ascending=False)
+print(chess_df)
+
+# Defining each game type in order to split dataframe into smaller sections for manipulation
 Classical = ' Classical ', 'Classical '
 Classical_Tournament = ' Classical tournament ', 'Classical tournament '
 Blitz = ' Blitz ', 'Blitz '
@@ -132,16 +149,17 @@ Correspondence_df2 = chess_df[chess_df.Event == 'Correspondence ']
 Correspondence_df = pd.merge(Correspondence_df1, Correspondence_df2, how='outer')
 
 # Plot results
-# fig, ax = plt.subplots()
+# fig, AvgElo, ax2, ax3, ax4 = plt.subplots()
 
-# ax.bar(Correspondence_df["BlackEloRank"], Correspondence_df["Termination"])
-# sns.scatterplot(x="AverageElo", y="Termination", data=Classical_df)
+# AvgElo.displot(Classical_df['AverageElo'], bins=50, kde=True)
+# n ax2.displot(data=chess_df, x="AverageElo", hue="Termination", kind="hist")
 
-sns.displot(Correspondence_df['AverageElo'], kde=True)
+
+# sns.displot(Correspondence_df['AverageElo'], bins=50, kde=True)
 # sns.displot(data=chess_df, x="Termination", hue="Event", kind="kde")
-sns.displot(data=chess_df, x="AverageElo", hue="Termination", kind="kde")
-plt.show()
-plt.clf()
+# sns.displot(data=chess_df, x="AverageElo", hue="Termination", kind="hist")
+# plt.show()
+# plt.clf()
 
 end = time.time()
 print("Run Time: ", (end - start), 'Seconds')
