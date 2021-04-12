@@ -103,11 +103,11 @@ moves_df = moves_df.drop(moves_df.iloc[:, 0:31:3], axis=1)
 chess_df = pd.concat([chess_df, moves_df], axis=1)
 chess_df.reset_index()
 # chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
-print(chess_df)
+# print(chess_df)
 
 # sort data from lowest average ELO to highest average ELO
 chess_df = chess_df.sort_values(by='AverageElo', ascending=False)
-print(chess_df)
+# print(chess_df)
 
 # Defining each game type in order to split dataframe into smaller sections for manipulation
 Classical = ' Classical ', 'Classical '
@@ -149,17 +149,11 @@ Correspondence_df2 = chess_df[chess_df.Event == 'Correspondence ']
 Correspondence_df = pd.merge(Correspondence_df1, Correspondence_df2, how='outer')
 
 # Plot results
-# fig, AvgElo, ax2, ax3, ax4 = plt.subplots()
-
-# AvgElo.displot(Classical_df['AverageElo'], bins=50, kde=True)
-# n ax2.displot(data=chess_df, x="AverageElo", hue="Termination", kind="hist")
-
-
-# sns.displot(Correspondence_df['AverageElo'], bins=50, kde=True)
-# sns.displot(data=chess_df, x="Termination", hue="Event", kind="kde")
-# sns.displot(data=chess_df, x="AverageElo", hue="Termination", kind="hist")
-# plt.show()
-# plt.clf()
+sns.histplot(Correspondence_df['AverageElo'], bins=50, kde=True)
+sns.histplot(x=chess_df["Termination"], kde=True)
+sns.histplot(x=chess_df["AverageElo"], hist=True)
+plt.show()
+plt.clf()
 
 end = time.time()
 print("Run Time: ", (end - start), 'Seconds')
