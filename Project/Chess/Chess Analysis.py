@@ -6,6 +6,7 @@ import time as time
 from kaggle.api.kaggle_api_extended import KaggleApi
 import zipfile
 
+pd.set_option("display.max_columns", None)
 # Start time count to gauge process run time
 
 start = time.time()
@@ -20,14 +21,10 @@ zf = zipfile.ZipFile('chess-games.zip')
 csv = pd.read_csv(zf.open('chess_games.csv'), chunksize=100000)
 chess_df = pd.concat(csv)
 
-# Show number of rows
-print(chess_df.shape)
-
 # Remove any duplicate values and fill N/A user names
 chess_df = chess_df.drop_duplicates(subset=['White', 'Black'])
 
-# show number of rows after dropping duplicates
-print(chess_df.shape)
+# reset index after dropping duplicate users
 chess_df = chess_df.reset_index()
 
 # Define average ELO rank per game
@@ -110,50 +107,44 @@ chess_df = chess_df.sort_values(by='AverageElo', ascending=False)
 # print(chess_df)
 
 # Defining each game type in order to split dataframe into smaller sections for manipulation
-Classical = ' Classical ', 'Classical '
-Classical_Tournament = ' Classical tournament ', 'Classical tournament '
-Blitz = ' Blitz ', 'Blitz '
-Blitz_Tournament = ' Blitz tournament ', 'Blitz tournament '
-Bullet = ' Bullet ', 'Bullet '
-Bullet_Tournament = ' Bullet tournament ', 'Bullet tournament '
-Correspondence = ' Correspondence ', 'Correspondence '
+Classical = pd.DataFrame()
+Classical_Tournament = pd.DataFrame()
+Blitz = pd.DataFrame()
+Blitz_Tournament = pd.DataFrame()
+Bullet = pd.DataFrame()
+Bullet_Tournament = pd.DataFrame()
+Correspondence = pd.DataFrame()
 
-# Split chess dataframe into game type dataframes
+game_types = [' Classical ', 'Classical ', ' Classical tournament ', 'Classical tournament ', ' Blitz ', 'Blitz ',
+              ' Blitz tournament ', 'Blitz tournament ', ' Bullet ', 'Bullet ', ' Bullet tournament ',
+              'Bullet tournament ', ' Correspondence ', 'Correspondence ']
 
-Classical_df1 = chess_df[chess_df.Event == ' Classical ']
-Classical_df2 = chess_df[chess_df.Event == 'Classical ']
-Classical_df = pd.merge(Classical_df1, Classical_df2, how='outer')
+single_game_types = [Classical, Classical_Tournament, Blitz, Blitz_Tournament, Bullet, Bullet_Tournament,
+                     Correspondence]
 
-Classical_Tournament_df1 = chess_df[chess_df.Event == ' Classical tournament ']
-Classical_Tournament_df2 = chess_df[chess_df.Event == 'Classical tournament ']
-Classical_Tournament_df = pd.merge(Classical_Tournament_df1, Classical_Tournament_df2, how='outer')
-
-Blitz_df1 = chess_df[chess_df.Event == ' Blitz ']
-Blitz_df2 = chess_df[chess_df.Event == 'Blitz ']
-Blitz_df = pd.merge(Blitz_df1, Blitz_df2, how='outer')
-
-Blitz_Tournament_df1 = chess_df[chess_df.Event == ' Blitz tournament ']
-Blitz_Tournament_df2 = chess_df[chess_df.Event == 'Blitz tournament ']
-Blitz_Tournament_df = pd.merge(Blitz_Tournament_df1, Blitz_Tournament_df2, how='outer')
-
-Bullet_df1 = chess_df[chess_df.Event == ' Bullet ']
-Bullet_df2 = chess_df[chess_df.Event == 'Bullet ']
-Bullet_df = pd.merge(Bullet_df1, Bullet_df2, how='outer')
-
-Bullet_Tournament_df1 = chess_df[chess_df.Event == ' Bullet tournament ']
-Bullet_Tournament_df2 = chess_df[chess_df.Event == 'Bullet tournament ']
-Bullet_Tournament_df = pd.merge(Bullet_Tournament_df1, Bullet_Tournament_df2, how='outer')
-
-Correspondence_df1 = chess_df[chess_df.Event == ' Correspondence ']
-Correspondence_df2 = chess_df[chess_df.Event == 'Correspondence ']
-Correspondence_df = pd.merge(Correspondence_df1, Correspondence_df2, how='outer')
+# Split chess dataframe into game type dataframes using while loop
+i = 0
+j = 0
+while i < 14:
+    x = chess_df[chess_df.Event == game_types[i]]
+    y = chess_df[chess_df.Event == game_types[i+1]]
+    z = single_game_types[j]
+    z = x.append(y)
+    print(z)
+    i = i + 2
+    j = j + 1
 
 # Plot results
-sns.histplot(Correspondence_df['AverageElo'], bins=50, kde=True)
-sns.histplot(x=chess_df["Termination"], kde=True)
-sns.histplot(x=chess_df["AverageElo"], hist=True)
+# fig, avg = plt.subplots()
+# sns.boxplot(y=Classical['AverageElo'], x=Classical['AverageEloRank'], ax=avg)
+# sns.lineplot(x=Classical_Tournament['WhiteElo'], ax=avg)
+# sns.lineplot(x=Bullet['WhiteElo'], ax=avg)
+# sns.lineplot(x=Bullet_Tournament['WhiteElo'], ax=avg)
+# sns.lineplot(x=Blitz['WhiteElo'], ax=avg)
+# sns.lineplot(x=Blitz_Tournament['WhiteElo'], ax=avg)
+# sns.lineplot(x=Correspondence['WhiteElo'], ax=avg)
 plt.show()
 plt.clf()
-
 end = time.time()
+
 print("Run Time: ", (end - start), 'Seconds')
