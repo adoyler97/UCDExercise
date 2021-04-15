@@ -14,21 +14,42 @@ api = KaggleApi()
 api.authenticate()
 
 # downloading datasets for Chess games
-api.dataset_download_files('arevel/chess-games')
+# api.dataset_download_files('arevel/chess-games')
 
 # Read data in chunks of 100000 rows and concatenate into one dataframe at a time to speed up read time
 zf = zipfile.ZipFile('chess-games.zip')
 csv = pd.read_csv(zf.open('chess_games.csv'), chunksize=100000)
 chess_df = pd.concat(csv)
 
-# Remove any duplicate values and fill N/A user names
+# Remove any duplicate user names to limit data to one game per user
 chess_df = chess_df.drop_duplicates(subset=['White', 'Black'])
+
+# remove any stockfish evaluations from data set
+for index, row in chess_df.head(10).iterrows():
+    print(index, row)
 
 # reset index after dropping duplicate users
 chess_df = chess_df.reset_index()
 
 # Define average ELO rank per game
 chess_df['AverageElo'] = (chess_df['WhiteElo'] + chess_df['BlackElo']) / 2
+
+
+# assign number value to result column to use as conditions
+
+def f(row):
+    if row['Result'] == '1-0':
+        val = 1
+    elif row['A'] == '0-1':
+        val = 2
+    elif row['A'] == '1/2-1/2':
+        val = 3
+    else:
+        val = 4
+    return val
+
+
+chess_df['Result Numeric'] = chess_df.apply(f, axis=1)
 
 # Define chess rankings in ranges
 # Super Grand Master = ELO 2700+
@@ -69,28 +90,31 @@ Black_conditions = [(chess_df['BlackElo'] >= 2700) &
                     (chess_df['BlackElo'] <= 1200), (chess_df['BlackElo'] >= 0)]
 
 Average_conditions = [(chess_df['AverageElo'] >= 2700) &
-                    (chess_df['AverageElo'] <= 2700), (chess_df['AverageElo'] >= 2500) &
-                    (chess_df['AverageElo'] <= 2500), (chess_df['AverageElo'] >= 2400) &
-                    (chess_df['AverageElo'] <= 2400), (chess_df['AverageElo'] >= 2300) &
-                    (chess_df['AverageElo'] <= 2300), (chess_df['AverageElo'] >= 2200) &
-                    (chess_df['AverageElo'] <= 2200), (chess_df['AverageElo'] >= 2000) &
-                    (chess_df['AverageElo'] <= 2000), (chess_df['AverageElo'] >= 1800) &
-                    (chess_df['AverageElo'] <= 1800), (chess_df['AverageElo'] >= 1600) &
-                    (chess_df['AverageElo'] <= 1600), (chess_df['AverageElo'] >= 1400) &
-                    (chess_df['AverageElo'] <= 1400), (chess_df['AverageElo'] >= 1200) &
-                    (chess_df['AverageElo'] <= 1200), (chess_df['AverageElo'] >= 0)]
+                      (chess_df['AverageElo'] <= 2700), (chess_df['AverageElo'] >= 2500) &
+                      (chess_df['AverageElo'] <= 2500), (chess_df['AverageElo'] >= 2400) &
+                      (chess_df['AverageElo'] <= 2400), (chess_df['AverageElo'] >= 2300) &
+                      (chess_df['AverageElo'] <= 2300), (chess_df['AverageElo'] >= 2200) &
+                      (chess_df['AverageElo'] <= 2200), (chess_df['AverageElo'] >= 2000) &
+                      (chess_df['AverageElo'] <= 2000), (chess_df['AverageElo'] >= 1800) &
+                      (chess_df['AverageElo'] <= 1800), (chess_df['AverageElo'] >= 1600) &
+                      (chess_df['AverageElo'] <= 1600), (chess_df['AverageElo'] >= 1400) &
+                      (chess_df['AverageElo'] <= 1400), (chess_df['AverageElo'] >= 1200) &
+                      (chess_df['AverageElo'] <= 1200), (chess_df['AverageElo'] >= 0)]
 
-Outcome_conditions = [(chess_df['Result'] == "1-0") & (chess_df['Result'] == "0-1") &
-                      (chess_df['Result'] == "1/2-1/2")]
+Outcome_conditions = [(chess_df['Result'] <= 1) &
+                      (chess_df['Result'] <= 2), (chess_df['Result'] >= 1) &
+                      (chess_df['Result'] <= 3), (chess_df['Result'] >= 2) &
+                      (chess_df['Result'] <= 4), (chess_df['Result'] >= 3)]
 
 # create a list of the values to assign for each condition
 ELO = ['Super GM', 'GM', 'GM/IM', 'FM/IM', 'CM/NM', 'Experts', 'Class A', 'Class B', 'Class C', 'Class D', 'Novices']
-Outcome = ['White Wins', 'Black Wins', 'Draw']
+Outcome = ['White Wins', 'Black Wins', 'Draw', 'Unknown']
 
-# create a new column and use np.select to assign values to it using the lists as arguments
+# create new columns and use np.select to assign values to it using the lists as arguments
 chess_df['WhiteEloRank'] = np.select(White_conditions, ELO)
 chess_df['BlackEloRank'] = np.select(Black_conditions, ELO)
 chess_df['AverageEloRank'] = np.select(Average_conditions, ELO)
+chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
 
 # create dataframe for moves
 moves_df = chess_df["AN"].str.split(" ", n=30, expand=True)
@@ -99,8 +123,6 @@ moves_df = moves_df.drop(moves_df.iloc[:, 0:31:3], axis=1)
 # append moves dataframe to chess dataframe
 chess_df = pd.concat([chess_df, moves_df], axis=1)
 chess_df.reset_index()
-# chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
-# print(chess_df)
 
 # sort data from lowest average ELO to highest average ELO
 chess_df = chess_df.sort_values(by='AverageElo', ascending=False)
@@ -127,10 +149,9 @@ i = 0
 j = 0
 while i < 14:
     x = chess_df[chess_df.Event == game_types[i]]
-    y = chess_df[chess_df.Event == game_types[i+1]]
+    y = chess_df[chess_df.Event == game_types[i + 1]]
     z = single_game_types[j]
     z = x.append(y)
-    print(z)
     i = i + 2
     j = j + 1
 
