@@ -34,23 +34,6 @@ chess_df = chess_df.reset_index()
 # Define average ELO rank per game
 chess_df['AverageElo'] = (chess_df['WhiteElo'] + chess_df['BlackElo']) / 2
 
-
-# assign number value to result column to use as conditions
-
-def f(row):
-    if row['Result'] == '1-0':
-        val = 1
-    elif row['A'] == '0-1':
-        val = 2
-    elif row['A'] == '1/2-1/2':
-        val = 3
-    else:
-        val = 4
-    return val
-
-
-chess_df['Result Numeric'] = chess_df.apply(f, axis=1)
-
 # Define chess rankings in ranges
 # Super Grand Master = ELO 2700+
 # Grand Master = 2500 - 2700
@@ -101,10 +84,10 @@ Average_conditions = [(chess_df['AverageElo'] >= 2700) &
                       (chess_df['AverageElo'] <= 1400), (chess_df['AverageElo'] >= 1200) &
                       (chess_df['AverageElo'] <= 1200), (chess_df['AverageElo'] >= 0)]
 
-Outcome_conditions = [(chess_df['Result'] <= 1) &
-                      (chess_df['Result'] <= 2), (chess_df['Result'] >= 1) &
-                      (chess_df['Result'] <= 3), (chess_df['Result'] >= 2) &
-                      (chess_df['Result'] <= 4), (chess_df['Result'] >= 3)]
+Outcome_conditions = [(chess_df['Result'] == '1-0') &
+                      (chess_df['Result'] == '0-1') &
+                      (chess_df['Result'] == '1/2-1/2') &
+                      (chess_df['Result'] == '*')]
 
 # create a list of the values to assign for each condition
 ELO = ['Super GM', 'GM', 'GM/IM', 'FM/IM', 'CM/NM', 'Experts', 'Class A', 'Class B', 'Class C', 'Class D', 'Novices']
@@ -114,7 +97,11 @@ Outcome = ['White Wins', 'Black Wins', 'Draw', 'Unknown']
 chess_df['WhiteEloRank'] = np.select(White_conditions, ELO)
 chess_df['BlackEloRank'] = np.select(Black_conditions, ELO)
 chess_df['AverageEloRank'] = np.select(Average_conditions, ELO)
-chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
+# chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
+
+# chess_df["BlackElo", "WhiteElo", "AverageElo", "BlackEloRank", "WhiteEloRank", "AverageEloRank"] = \
+# pd.to_numeric(chess_df["BlackElo", "WhiteElo", "AverageElo", "BlackEloRank", "WhiteEloRank", "AverageEloRank"],
+# downcast="float")
 
 # create dataframe for moves
 moves_df = chess_df["AN"].str.split(" ", n=30, expand=True)
@@ -126,8 +113,10 @@ chess_df.reset_index()
 
 # sort data from lowest average ELO to highest average ELO
 chess_df = chess_df.sort_values(by='AverageElo', ascending=False)
-# print(chess_df)
 
+# print(chess_df)
+print(chess_df.dtypes)
+print(chess_df)
 # Defining each game type in order to split dataframe into smaller sections for manipulation
 Classical = pd.DataFrame()
 Classical_Tournament = pd.DataFrame()
@@ -156,14 +145,15 @@ while i < 14:
     j = j + 1
 
 # Plot results
-# fig, avg = plt.subplots()
-# sns.boxplot(y=Classical['AverageElo'], x=Classical['AverageEloRank'], ax=avg)
-# sns.lineplot(x=Classical_Tournament['WhiteElo'], ax=avg)
-# sns.lineplot(x=Bullet['WhiteElo'], ax=avg)
-# sns.lineplot(x=Bullet_Tournament['WhiteElo'], ax=avg)
-# sns.lineplot(x=Blitz['WhiteElo'], ax=avg)
-# sns.lineplot(x=Blitz_Tournament['WhiteElo'], ax=avg)
-# sns.lineplot(x=Correspondence['WhiteElo'], ax=avg)
+fig, ax = plt.subplots()
+# ax.plot(Classical["AverageElo"], Classical["WhiteElo"])
+sns.histplot(Classical, x="AverageEloRank")
+# sns.histplot(x="BlackElo", y="WhiteElo", data=Classical_Tournament, ax=avg)
+# sns.histplot(x="BlackElo", y="WhiteElo", data=Bullet, ax=avg)
+# sns.histplot(x="BlackElo", y="WhiteElo", data=Bullet_Tournament, ax=avg)
+# sns.histplot(x="BlackElo", y="WhiteElo", data=Blitz, ax=avg)
+# sns.histplot(x="BlackElo", y="WhiteElo", data=Blitz_Tournament, ax=avg)
+# sns.histplot(x="BlackElo", y="WhiteElo", data=Correspondence, ax=avg)
 plt.show()
 plt.clf()
 end = time.time()
