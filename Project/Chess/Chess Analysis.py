@@ -84,24 +84,14 @@ Average_conditions = [(chess_df['AverageElo'] >= 2700) &
                       (chess_df['AverageElo'] <= 1400), (chess_df['AverageElo'] >= 1200) &
                       (chess_df['AverageElo'] <= 1200), (chess_df['AverageElo'] >= 0)]
 
-Outcome_conditions = [(chess_df['Result'] == '1-0') &
-                      (chess_df['Result'] == '0-1') &
-                      (chess_df['Result'] == '1/2-1/2') &
-                      (chess_df['Result'] == '*')]
-
 # create a list of the values to assign for each condition
 ELO = ['Super GM', 'GM', 'GM/IM', 'FM/IM', 'CM/NM', 'Experts', 'Class A', 'Class B', 'Class C', 'Class D', 'Novices']
-Outcome = ['White Wins', 'Black Wins', 'Draw', 'Unknown']
 
 # create new columns and use np.select to assign values to it using the lists as arguments
 chess_df['WhiteEloRank'] = np.select(White_conditions, ELO)
 chess_df['BlackEloRank'] = np.select(Black_conditions, ELO)
 chess_df['AverageEloRank'] = np.select(Average_conditions, ELO)
-# chess_df['Outcome'] = np.select(Outcome_conditions, Outcome)
 
-# chess_df["BlackElo", "WhiteElo", "AverageElo", "BlackEloRank", "WhiteEloRank", "AverageEloRank"] = \
-# pd.to_numeric(chess_df["BlackElo", "WhiteElo", "AverageElo", "BlackEloRank", "WhiteEloRank", "AverageEloRank"],
-# downcast="float")
 
 # create dataframe for moves
 moves_df = chess_df["AN"].str.split(" ", n=30, expand=True)
@@ -109,51 +99,53 @@ moves_df = moves_df.drop(moves_df.iloc[:, 0:31:3], axis=1)
 
 # append moves dataframe to chess dataframe
 chess_df = pd.concat([chess_df, moves_df], axis=1)
-chess_df.reset_index()
+chess_df.reset_index(inplace=True)
 
 # sort data from lowest average ELO to highest average ELO
 chess_df = chess_df.sort_values(by='AverageElo', ascending=False)
 
-# print(chess_df)
-print(chess_df.dtypes)
-print(chess_df)
-# Defining each game type in order to split dataframe into smaller sections for manipulation
-Classical = pd.DataFrame()
-Classical_Tournament = pd.DataFrame()
-Blitz = pd.DataFrame()
-Blitz_Tournament = pd.DataFrame()
-Bullet = pd.DataFrame()
-Bullet_Tournament = pd.DataFrame()
-Correspondence = pd.DataFrame()
+# change data type from object to numeric values
+chess_df[["WhiteElo", "BlackElo", "AverageElo"]] = chess_df[["WhiteElo", "BlackElo", "AverageElo"]].apply(pd.to_numeric)
 
-game_types = [' Classical ', 'Classical ', ' Classical tournament ', 'Classical tournament ', ' Blitz ', 'Blitz ',
-              ' Blitz tournament ', 'Blitz tournament ', ' Bullet ', 'Bullet ', ' Bullet tournament ',
-              'Bullet tournament ', ' Correspondence ', 'Correspondence ']
+Classical_df1 = chess_df[chess_df.Event == ' Classical ']
+Classical_df2 = chess_df[chess_df.Event == 'Classical ']
+Classical = pd.merge(Classical_df1, Classical_df2, how='outer')
+for col in Classical.columns:
+    print(col)
 
-single_game_types = [Classical, Classical_Tournament, Blitz, Blitz_Tournament, Bullet, Bullet_Tournament,
-                     Correspondence]
+Classical_Tournament_df1 = chess_df[chess_df.Event == ' Classical tournament ']
+Classical_Tournament_df2 = chess_df[chess_df.Event == 'Classical tournament ']
+Classical_Tournament = pd.merge(Classical_Tournament_df1, Classical_Tournament_df2, how='outer')
 
-# Split chess dataframe into game type dataframes using while loop
-i = 0
-j = 0
-while i < 14:
-    x = chess_df[chess_df.Event == game_types[i]]
-    y = chess_df[chess_df.Event == game_types[i + 1]]
-    z = single_game_types[j]
-    z = x.append(y)
-    i = i + 2
-    j = j + 1
+Blitz_df1 = chess_df[chess_df.Event == ' Blitz ']
+Blitz_df2 = chess_df[chess_df.Event == 'Blitz ']
+Blitz = pd.merge(Blitz_df1, Blitz_df2, how='outer')
+
+Blitz_Tournament_df1 = chess_df[chess_df.Event == ' Blitz tournament ']
+Blitz_Tournament_df2 = chess_df[chess_df.Event == 'Blitz tournament ']
+Blitz_Tournament = pd.merge(Blitz_Tournament_df1, Blitz_Tournament_df2, how='outer')
+
+Bullet_df1 = chess_df[chess_df.Event == ' Bullet ']
+Bullet_df2 = chess_df[chess_df.Event == 'Bullet ']
+Bullet = pd.merge(Bullet_df1, Bullet_df2, how='outer')
+
+Bullet_Tournament_df1 = chess_df[chess_df.Event == ' Bullet tournament ']
+Bullet_Tournament_df2 = chess_df[chess_df.Event == 'Bullet tournament ']
+Bullet_Tournament = pd.merge(Bullet_Tournament_df1, Bullet_Tournament_df2, how='outer')
+
+Correspondence_df1 = chess_df[chess_df.Event == ' Correspondence ']
+Correspondence_df2 = chess_df[chess_df.Event == 'Correspondence ']
+Correspondence = pd.merge(Correspondence_df1, Correspondence_df2, how='outer')
 
 # Plot results
-fig, ax = plt.subplots()
-# ax.plot(Classical["AverageElo"], Classical["WhiteElo"])
-sns.histplot(Classical, x="AverageEloRank")
-# sns.histplot(x="BlackElo", y="WhiteElo", data=Classical_Tournament, ax=avg)
-# sns.histplot(x="BlackElo", y="WhiteElo", data=Bullet, ax=avg)
-# sns.histplot(x="BlackElo", y="WhiteElo", data=Bullet_Tournament, ax=avg)
-# sns.histplot(x="BlackElo", y="WhiteElo", data=Blitz, ax=avg)
-# sns.histplot(x="BlackElo", y="WhiteElo", data=Blitz_Tournament, ax=avg)
-# sns.histplot(x="BlackElo", y="WhiteElo", data=Correspondence, ax=avg)
+fig, avg = plt.subplots()
+sns.histplot(x="AverageElo", data=Classical, kde=True, ax=avg, color='r')
+sns.histplot(x="AverageElo", data=Classical_Tournament, bins=25, kde=True, ax=avg, color='b')
+sns.histplot(x="AverageElo", data=Bullet, bins=25, kde=True, ax=avg, color='g')
+sns.histplot(x="AverageElo", data=Bullet_Tournament, bins=25, kde=True, ax=avg)
+sns.histplot(x="AverageElo", data=Blitz, bins=25, kde=True, ax=avg)
+sns.histplot(x="AverageElo", data=Blitz_Tournament, bins=25, kde=True, ax=avg)
+sns.histplot(x="AverageElo", data=Correspondence, bins=25, kde=True, ax=avg)
 plt.show()
 plt.clf()
 end = time.time()
